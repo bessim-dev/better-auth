@@ -367,7 +367,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 					activeOrTrialingSubscription &&
 					activeOrTrialingSubscription.status === "active" &&
 					activeOrTrialingSubscription.plan === ctx.body.plan &&
-					activeOrTrialingSubscription.seats === (ctx.body.seats || 1)
+					(plan.metered || activeOrTrialingSubscription.seats === (ctx.body.seats || 1))
 				) {
 					throw new APIError("BAD_REQUEST", {
 						message: STRIPE_ERROR_CODES.ALREADY_SUBSCRIBED_PLAN,
@@ -392,7 +392,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 									items: [
 										{
 											id: activeSubscription.items.data[0]?.id as string,
-											quantity: ctx.body.seats || 1,
+											...(plan.metered ? {} : { quantity: ctx.body.seats || 1 }),
 											price: ctx.body.annual
 												? plan.annualDiscountPriceId
 												: plan.priceId,
@@ -421,7 +421,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 						model: "subscription",
 						update: {
 							plan: plan.name.toLowerCase(),
-							seats: ctx.body.seats || 1,
+							...(plan.metered ? {} : { seats: ctx.body.seats || 1 }),
 							updatedAt: new Date(),
 						},
 						where: [
@@ -445,7 +445,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 							stripeCustomerId: customerId,
 							status: "incomplete",
 							referenceId,
-							seats: ctx.body.seats || 1,
+							...(plan.metered ? {} : { seats: ctx.body.seats || 1 }),
 						},
 					});
 				}
@@ -524,7 +524,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 							line_items: [
 								{
 									price: priceIdToUse,
-									quantity: ctx.body.seats || 1,
+									...(plan.metered ? {} : { quantity: ctx.body.seats || 1 }),
 								},
 							],
 							subscription_data: {
@@ -1035,7 +1035,7 @@ export const stripe = <O extends StripeOptions>(options: O) => {
 									model: "subscription",
 									update: {
 										status: stripeSubscription.status,
-										seats: stripeSubscription.items.data[0]?.quantity || 1,
+										...(plan.metered ? {} : { seats: stripeSubscription.items.data[0]?.quantity || 1 }),
 										plan: plan.name.toLowerCase(),
 										periodEnd: new Date(
 											stripeSubscription.items.data[0]?.current_period_end *

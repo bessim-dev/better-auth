@@ -49,6 +49,15 @@ export type StripePlan = {
 	 */
 	group?: string;
 	/**
+	 * Whether this plan uses metered billing
+	 *
+	 * When true, the quantity field will be omitted from Stripe
+	 * subscription creation and updates, as required for metered billing.
+	 *
+	 * @default false
+	 */
+	metered?: boolean;
+	/**
 	 * Free trial days
 	 */
 	freeTrial?: {

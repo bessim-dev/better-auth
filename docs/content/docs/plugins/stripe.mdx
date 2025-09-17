@@ -16,6 +16,7 @@ The Stripe plugin integrates Stripe's payment and subscription functionality wit
 - **Automatic trial abuse prevention** - Users can only get one trial per account across all plans
 - Flexible reference system to associate subscriptions with users or organizations
 - Team subscription support with seats management
+- **Metered billing support** - Plans can be configured to omit quantity for usage-based pricing
 
 ## Installation
 
@@ -718,6 +719,8 @@ Each plan can have the following properties:
 
 **group**: `string` - A group name for the plan, useful for categorizing plans.
 
+**metered**: `boolean` - Whether the plan uses metered billing. When `true`, the quantity field is omitted from Stripe subscriptions, which is required for usage-based pricing. Default: `false`.
+
 **freeTrial**: Object containing trial configuration:
   - **days**: `number` - Number of trial days.
   - **onTrialStart**: `(subscription: Subscription) => Promise<void>` - Called when a trial starts.
@@ -742,6 +745,48 @@ await client.subscription.upgrade({
     annual: true, // upgrade to an annual plan (optional)
     successUrl: "/org/billing/success",
     cancelUrl: "/org/billing"
+});
+```
+
+### Metered Billing Plans
+
+For usage-based pricing, you can configure plans as metered. This omits the `quantity` field from Stripe subscriptions, which is required for metered billing:
+
+```ts title="auth.ts"
+stripe({
+    // ... other config
+    subscription: {
+        enabled: true,
+        plans: [
+            {
+                name: "api-starter",
+                priceId: "price_api_starter_metered",
+                metered: true, // Enables metered billing
+                limits: {
+                    requests: 100000, // For display purposes only
+                }
+            },
+            {
+                name: "team-fixed",
+                priceId: "price_team_fixed",
+                metered: false, // Traditional seat-based billing
+                limits: {
+                    users: 10,
+                    projects: 50,
+                }
+            }
+        ]
+    }
+});
+```
+
+```ts title="client.ts"
+// Subscribe to a metered plan
+await client.subscription.upgrade({
+    plan: "api-starter",
+    // seats parameter is ignored for metered plans
+    successUrl: "/billing/success",
+    cancelUrl: "/billing"
 });
 ```
 
