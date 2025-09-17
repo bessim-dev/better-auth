@@ -53,7 +53,7 @@ export async function onCheckoutSessionCompleted(
 								subscription.items.data[0].current_period_end * 1000,
 							),
 							stripeSubscriptionId: checkoutSession.subscription as string,
-							seats,
+							...(plan.metered ? {} : { seats }),
 							...trial,
 						},
 						where: [
@@ -160,7 +160,7 @@ export async function onSubscriptionUpdated(
 					subscriptionUpdated.items.data[0].current_period_end * 1000,
 				),
 				cancelAtPeriodEnd: subscriptionUpdated.cancel_at_period_end,
-				seats,
+				...(plan?.metered ? {} : { seats }),
 				stripeSubscriptionId: subscriptionUpdated.id,
 			},
 			where: [
